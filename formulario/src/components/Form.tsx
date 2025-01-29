@@ -1,6 +1,6 @@
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import React, { useRef } from "react";
+import { useRef } from "react";
 
 interface FormProps {
   initialValues?: {
@@ -54,7 +54,7 @@ const Form = ({ initialValues }: FormProps) => {
       .required("Telephone is required"),
       terms: Yup.boolean().oneOf([true], "You must accept the terms and conditions"),
     }),
-    onSubmit: (values, { setSubmitting, resetForm }) => {
+    onSubmit: (_values, { setSubmitting, resetForm }) => {
       // Simulate a successful submission (e.g., API call)
       setTimeout(() => {
         // Provide success feedback in the same aria-live region
