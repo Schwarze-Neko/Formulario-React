@@ -1,291 +1,408 @@
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
+import { useFormik } from "formik";
+import * as Yup from "yup";
+import React, { useRef } from "react";
 
-const Form = () => {
+interface FormProps {
+  initialValues?: {
+    subject: string;
+    gender: string;
+    department: string;
+    message: string;
+    firstName: string;
+    lastName: string;
+    postalCode: string;
+    city: string;
+    street: string;
+    email: string;
+    telephone: string;
+    terms: boolean;
+  };
+}
+
+const Form = ({ initialValues }: FormProps) => {
+  const messageRef = useRef<HTMLDivElement>(null); // Ref to focus on message container
   const formik = useFormik({
-    initialValues: {
-      subject: '',
-      gender: '',
-      department: '',
-      message: '',
-      firstName: '',
-      lastName: '',
-      postalCode: '',
-      city: '',
-      street: '',
-      email: '',
-      telephone: '',
+    initialValues: initialValues || {
+      subject: "",
+      gender: "",
+      department: "",
+      message: "",
+      firstName: "",
+      lastName: "",
+      postalCode: "",
+      city: "",
+      street: "",
+      email: "",
+      telephone: "",
       terms: false,
     },
     validationSchema: Yup.object({
-      subject: Yup.string().required('Subject is required'),
-      gender: Yup.string().required('Gender is required'),
-      department: Yup.string().required('Department is required'),
-      message: Yup.string().required('Message is required'),
-      firstName: Yup.string().required('First name is required'),
-      lastName: Yup.string().required('Last name is required'),
+      subject: Yup.string().required("Subject is required"),
+      gender: Yup.string().required("Gender is required"),
+      department: Yup.string().required("Please select a department"),
+      message: Yup.string().required("Message is required"),
+      firstName: Yup.string().required("First name is required"),
+      lastName: Yup.string().required("Last name is required"),
       postalCode: Yup.string()
-        .matches(/^\d{5}$/, 'Postal code must be a 5-digit number')
-        .required('Postal code is required'),
-      city: Yup.string().required('City is required'),
-      street: Yup.string().required('Street is required'),
-      email: Yup.string().email('Invalid email address').required('Email is required'),
+        .matches(/^\d{4}$/, "Postal code must be a 4-digit number")
+        .required("Postal code is required"),
+      city: Yup.string().required("City is required"),
+      street: Yup.string().required("Street is required"),
+      email: Yup.string().email("Invalid email address").required("Email is required"),
       telephone: Yup.string()
-        .matches(/^\d+$/, 'Telephone must contain only numbers')
-        .required('Telephone is required'),
-      terms: Yup.boolean().oneOf([true], 'You must accept the terms and conditions'),
+      .matches(/^\+?\d+$/, "Telephone must contain only numbers")
+      .required("Telephone is required"),
+      terms: Yup.boolean().oneOf([true], "You must accept the terms and conditions"),
     }),
-    onSubmit: (values) => {
-      alert(JSON.stringify(values, null, 2));
+    onSubmit: (values, { setSubmitting, resetForm }) => {
+      // Simulate a successful submission (e.g., API call)
+      setTimeout(() => {
+        // Provide success feedback in the same aria-live region
+        if (messageRef.current) {
+          messageRef.current.textContent = "Your form has been successfully submitted.";
+          messageRef.current.focus();
+        }
+        // Reset or do whatever you need after submission
+        resetForm();
+        setSubmitting(false);
+      }, 500);
     },
   });
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Mark all fields as touched to display validation errors
+    formik.setTouched({
+      subject: true,
+      gender: true,
+      department: true,
+      message: true,
+      firstName: true,
+      lastName: true,
+      postalCode: true,
+      city: true,
+      street: true,
+      email: true,
+      telephone: true,
+      terms: true,
+    });
+
+    // Validate the form
+    const errors = await formik.validateForm();
+
+    // If there are errors, display them in the live region
+    if (Object.keys(errors).length > 0) {
+      const errorList = Object.values(errors).join(", ");
+      if (messageRef.current) {
+        messageRef.current.textContent = `The form contains errors: ${errorList}`;
+        messageRef.current.focus();
+      }
+      return;
+    }
+
+    // If no errors, clear any existing message and submit
+    if (messageRef.current) {
+      messageRef.current.textContent = "";
+    }
+
+    // Proceed with form submission
+    formik.handleSubmit();
+  };
+
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-200">
-      <form
-        className="form"
-        onSubmit={formik.handleSubmit}
-        noValidate
-        role="form" 
-      >
+    <main
+      role="main"
+      className="main-content flex justify-center items-center min-h-screen bg-gray-200"
+    >
+      <form className="form" onSubmit={handleSubmit} noValidate role="form">
         <h1>Contact Form</h1>
 
+        {/* Live region for both error and success messages */}
+        <div
+          id="form-message"
+          ref={messageRef}
+          tabIndex={-1}
+          aria-live="assertive"
+          className="mb-4 text-lg font-semibold text-green-700 bg-green-50 p-2"
+        ></div>
+
         {/* Gender Selection */}
-        <div className="gender-group mb-4">
-          <label>
-            <input
-              type="radio"
-              name="gender"
-              value="man"
-              checked={formik.values.gender === 'man'}
-              onChange={formik.handleChange}
-              aria-label="Select gender as man"
-              aria-required="true"
-              aria-describedby={formik.errors.gender ? 'gender-error' : undefined}
-            />
-            Man
-          </label>
-          <label>
-            <input
-              type="radio"
-              name="gender"
-              value="woman"
-              checked={formik.values.gender === 'woman'}
-              onChange={formik.handleChange}
-              aria-label="Select gender as woman"
-              aria-required="true"
-              aria-describedby={formik.errors.gender ? 'gender-error' : undefined}
-            />
-            Woman
-          </label>
-          {formik.touched.gender && formik.errors.gender ? (
-            <div className="error-message" id="gender-error">
-              {formik.errors.gender}
-            </div>
-          ) : null}
+        <div className="gender-group">
+          <fieldset>
+            <legend>Gender</legend>
+            <label htmlFor="gender-man">
+              Man
+              <input
+                id="gender-man"
+                type="radio"
+                name="gender"
+                value="man"
+                checked={formik.values.gender === "man"}
+                onChange={formik.handleChange}
+              />
+            </label>
+            <label htmlFor="gender-woman">
+              Woman
+              <input
+                id="gender-woman"
+                type="radio"
+                name="gender"
+                value="woman"
+                checked={formik.values.gender === "woman"}
+                onChange={formik.handleChange}
+              />
+            </label>
+            <label htmlFor="gender-other">
+              Other
+              <input
+                id="gender-other"
+                type="radio"
+                name="gender"
+                value="other"
+                checked={formik.values.gender === "other"}
+                onChange={formik.handleChange}
+              />
+            </label>
+          </fieldset>
         </div>
 
-        {/* Subject Field */}
+        {/* Subject */}
         <div className="mb-4">
           <label htmlFor="subject">Subject</label>
           <input
             id="subject"
             type="text"
-            {...formik.getFieldProps('subject')}
-            aria-label="Enter the subject of your message"
-            aria-required="true"
-            aria-describedby={formik.errors.subject ? 'subject-error' : undefined}
+            {...formik.getFieldProps("subject")}
+            aria-describedby="subject-error"
           />
-          {formik.touched.subject && formik.errors.subject ? (
-            <div className="error-message" id="subject-error">
+          {formik.touched.subject && formik.errors.subject && (
+            <div
+              className="error-message"
+              id="subject-error"
+              aria-live="assertive"
+            >
               {formik.errors.subject}
             </div>
-          ) : null}
+          )}
         </div>
 
-        {/* Department Field */}
+        {/* Department */}
         <div className="mb-4">
-          <label htmlFor="department">Department</label>
-          <input
+          <label htmlFor="department">Select a Department</label>
+          <select
             id="department"
-            type="text"
-            {...formik.getFieldProps('department')}
-            aria-label="Enter the department related to your query"
-            aria-required="true"
-            aria-describedby={formik.errors.department ? 'department-error' : undefined}
-          />
-          {formik.touched.department && formik.errors.department ? (
-            <div className="error-message" id="department-error">
+            {...formik.getFieldProps("department")}
+            aria-describedby="department-error"
+          >
+            <option value="">-- Select Department --</option>
+            <option value="health">Health Department</option>
+            <option value="education">Education Department</option>
+            <option value="transport">Transport Department</option>
+            <option value="immigration">Immigration Office</option>
+          </select>
+          {formik.touched.department && formik.errors.department && (
+            <div
+              className="error-message"
+              id="department-error"
+              aria-live="assertive"
+            >
               {formik.errors.department}
             </div>
-          ) : null}
+          )}
         </div>
 
-        {/* Message Field */}
+        {/* Message */}
         <div className="mb-4">
           <label htmlFor="message">Message</label>
           <textarea
             id="message"
-            {...formik.getFieldProps('message')}
-            aria-label="Enter your message"
-            aria-required="true"
-            aria-describedby={formik.errors.message ? 'message-error' : undefined}
-          ></textarea>
-          {formik.touched.message && formik.errors.message ? (
-            <div className="error-message" id="message-error">
+            {...formik.getFieldProps("message")}
+            aria-describedby="message-error"
+          />
+          {formik.touched.message && formik.errors.message && (
+            <div
+              className="error-message"
+              id="message-error"
+              aria-live="assertive"
+            >
               {formik.errors.message}
             </div>
-          ) : null}
+          )}
         </div>
 
-        {/* First Name Field */}
+        {/* First Name */}
         <div className="mb-4">
           <label htmlFor="firstName">First Name</label>
           <input
             id="firstName"
             type="text"
-            {...formik.getFieldProps('firstName')}
-            aria-label="Enter your first name"
-            aria-required="true"
-            aria-describedby={formik.errors.firstName ? 'firstName-error' : undefined}
+            {...formik.getFieldProps("firstName")}
+            aria-describedby="firstName-error"
           />
-          {formik.touched.firstName && formik.errors.firstName ? (
-            <div className="error-message" id="firstName-error">
+          {formik.touched.firstName && formik.errors.firstName && (
+            <div
+              className="error-message"
+              id="firstName-error"
+              aria-live="assertive"
+            >
               {formik.errors.firstName}
             </div>
-          ) : null}
+          )}
         </div>
 
-        {/* Last Name Field */}
+        {/* Last Name */}
         <div className="mb-4">
           <label htmlFor="lastName">Last Name</label>
           <input
             id="lastName"
             type="text"
-            {...formik.getFieldProps('lastName')}
-            aria-label="Enter your last name"
-            aria-required="true"
-            aria-describedby={formik.errors.lastName ? 'lastName-error' : undefined}
+            {...formik.getFieldProps("lastName")}
+            aria-describedby="lastName-error"
           />
-          {formik.touched.lastName && formik.errors.lastName ? (
-            <div className="error-message" id="lastName-error">
+          {formik.touched.lastName && formik.errors.lastName && (
+            <div
+              className="error-message"
+              id="lastName-error"
+              aria-live="assertive"
+            >
               {formik.errors.lastName}
             </div>
-          ) : null}
+          )}
         </div>
 
-        {/* Postal Code Field */}
+        {/* Postal Code */}
         <div className="mb-4">
           <label htmlFor="postalCode">Postal Code</label>
           <input
             id="postalCode"
             type="text"
-            {...formik.getFieldProps('postalCode')}
-            aria-label="Enter your postal code"
-            aria-required="true"
-            aria-describedby={formik.errors.postalCode ? 'postalCode-error' : undefined}
+            {...formik.getFieldProps("postalCode")}
+            aria-describedby="postalCode-error"
           />
-          {formik.touched.postalCode && formik.errors.postalCode ? (
-            <div className="error-message" id="postalCode-error">
+          {formik.touched.postalCode && formik.errors.postalCode && (
+            <div
+              className="error-message"
+              id="postalCode-error"
+              aria-live="assertive"
+            >
               {formik.errors.postalCode}
             </div>
-          ) : null}
+          )}
         </div>
 
-        {/* City Field */}
+        {/* City */}
         <div className="mb-4">
           <label htmlFor="city">City</label>
           <input
             id="city"
             type="text"
-            {...formik.getFieldProps('city')}
-            aria-label="Enter your city"
-            aria-required="true"
-            aria-describedby={formik.errors.city ? 'city-error' : undefined}
+            {...formik.getFieldProps("city")}
+            aria-describedby="city-error"
           />
-          {formik.touched.city && formik.errors.city ? (
-            <div className="error-message" id="city-error">
+          {formik.touched.city && formik.errors.city && (
+            <div
+              className="error-message"
+              id="city-error"
+              aria-live="assertive"
+            >
               {formik.errors.city}
             </div>
-          ) : null}
+          )}
         </div>
 
-        {/* Street Field */}
+        {/* Street */}
         <div className="mb-4">
           <label htmlFor="street">Street</label>
           <input
             id="street"
             type="text"
-            {...formik.getFieldProps('street')}
-            aria-label="Enter your street"
-            aria-required="true"
-            aria-describedby={formik.errors.street ? 'street-error' : undefined}
+            {...formik.getFieldProps("street")}
+            aria-describedby="street-error"
           />
-          {formik.touched.street && formik.errors.street ? (
-            <div className="error-message" id="street-error">
+          {formik.touched.street && formik.errors.street && (
+            <div
+              className="error-message"
+              id="street-error"
+              aria-live="assertive"
+            >
               {formik.errors.street}
             </div>
-          ) : null}
+          )}
         </div>
 
-        {/* Email Field */}
+        {/* Email */}
         <div className="mb-4">
           <label htmlFor="email">Email</label>
           <input
             id="email"
             type="email"
-            {...formik.getFieldProps('email')}
-            aria-label="Enter your email address"
-            aria-required="true"
-            aria-describedby={formik.errors.email ? 'email-error' : undefined}
+            {...formik.getFieldProps("email")}
+            aria-describedby="email-error"
           />
-          {formik.touched.email && formik.errors.email ? (
-            <div className="error-message" id="email-error">
+          {formik.touched.email && formik.errors.email && (
+            <div
+              className="error-message"
+              id="email-error"
+              aria-live="assertive"
+            >
               {formik.errors.email}
             </div>
-          ) : null}
+          )}
         </div>
 
-        {/* Telephone Field */}
+        {/* Telephone */}
         <div className="mb-4">
           <label htmlFor="telephone">Telephone</label>
           <input
             id="telephone"
             type="text"
-            {...formik.getFieldProps('telephone')}
-            aria-label="Enter your telephone number"
-            aria-required="true"
-            aria-describedby={formik.errors.telephone ? 'telephone-error' : undefined}
+            {...formik.getFieldProps("telephone")}
+            aria-describedby="telephone-error"
           />
-          {formik.touched.telephone && formik.errors.telephone ? (
-            <div className="error-message" id="telephone-error">
+          {formik.touched.telephone && formik.errors.telephone && (
+            <div
+              className="error-message"
+              id="telephone-error"
+              aria-live="assertive"
+            >
               {formik.errors.telephone}
             </div>
-          ) : null}
+          )}
         </div>
 
-        {/* Terms Checkbox */}
+        {/* Terms */}
         <div className="mb-4">
           <label>
             <input
               type="checkbox"
-              {...formik.getFieldProps('terms')}
-              aria-label="Accept terms and conditions"
-              aria-required="true"
-              aria-describedby={formik.errors.terms ? 'terms-error' : undefined}
+              {...formik.getFieldProps("terms")}
+              aria-describedby="terms-error"
             />
             I agree to the terms and conditions
           </label>
-          {formik.touched.terms && formik.errors.terms ? (
-            <div className="error-message" id="terms-error">
+          {formik.touched.terms && formik.errors.terms && (
+            <div
+              className="error-message"
+              id="terms-error"
+              aria-live="assertive"
+            >
               {formik.errors.terms}
             </div>
-          ) : null}
+          )}
         </div>
 
-        <button type="submit">Submit</button>
+        {/* Submit Button */}
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={!formik.isValid || formik.isSubmitting}
+          style={{ backgroundColor: "#0056b3", color: "#ffffff" }}
+        >
+          Submit
+        </button>
       </form>
-    </div>
+    </main>
   );
 };
 
